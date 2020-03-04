@@ -1,0 +1,110 @@
+Pivot Table --->>> If You Want To Convert Rows into Columns.
+
+1. Write your Base Query.
+2. Then Pivot Section Two Things --->>>
+1. Aggregration Function 
+2. Column Name You Want to Convert into Rows.
+
+Here We will Take Help of Two Functions --->>>
+QUOTENAME() Function  Wraps The Columns name in Squre Bracket.
+LEFT() function removes the last comma from the @columns string.
+
+
+
+----------------------------------------------------------------------------------------------------
+
+Practicle Section
+
+select * from production.categories
+
+select * from production.products 
+
+
+--Base Query
+
+
+select pp.model_year,pp.product_id,cc.category_name from production.products pp
+inner join production.categories cc on pp.category_id = cc.category_id
+
+
+select * from(
+select pp.model_year,pp.product_id,cc.category_name
+ from production.products pp
+inner join production.categories cc on pp.category_id = cc.category_id
+) t
+Pivot(
+count(t.product_id)
+   FOR t.category_name IN (
+        [Children Bicycles], 
+        [Comfort Bicycles], 
+        [Cruisers Bicycles], 
+        [Cyclocross Bicycles], 
+        [Electric Bikes], 
+        [Mountain Bikes], 
+        [Road Bikes])
+) As Pivot_table
+
+
+
+-- Validation
+select * from production.products pp
+inner join production.categories cc on pp.category_id = cc.category_id
+where cc.category_id =5
+
+
+
+-----------------------------------------------------------------------------------------------------------------
+
+Problem With This Approch We HardCoded Column Value That We are Converting into Rows.
+
+So Will Use Dynamic Sql Concept.
+
+
+DECLARE 
+    @columns NVARCHAR(MAX) = '', 
+    @sql     NVARCHAR(MAX) = '';
+
+
+-- select the category names
+SELECT 
+    @columns+=QUOTENAME(category_name) + ','
+FROM 
+    production.categories
+ORDER BY 
+    category_name;
+
+
+select @columns
+
+-- remove the last comma
+SET @columns = LEFT(@columns, LEN(@columns) - 1);
+
+select @columns
+
+
+-- construct dynamic SQL
+SET @sql ='
+SELECT * FROM   
+(
+    SELECT 
+        category_name, 
+        model_year,
+        product_id 
+    FROM 
+        production.products p
+        INNER JOIN production.categories c 
+            ON c.category_id = p.category_id
+) t 
+PIVOT(
+    COUNT(product_id) 
+    FOR category_name IN ('+ @columns +')
+) AS pivot_table;';
+
+
+-- execute the dynamic SQL
+EXECUTE sp_executesql @sql;
+
+--------------------------------------------------------------------------------------------------------------
+
+
+--- Refrence    ((https://www.sqlservertutorial.net/sql-server-basics/sql-server-pivot/))
