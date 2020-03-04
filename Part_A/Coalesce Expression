@@ -1,0 +1,92 @@
+If You Want to Handle Null Values in Your Columns Then Use This Concept.
+Or You Can Use Case Expression Also. Both Will Give Simmilar Output.
+
+
+-- Sql Server COALESCE Expression
+
+-- The Thing is How To Handle Null Values.
+
+select COALESCE(NULL, 'Hi', 'Hello', NULL) result;
+
+select COALESCE(NULL,  NULL,1) result;
+
+select * from sales.customers
+
+-- Using COALESCE Expression
+select first_name,last_name,COALESCE(phone, 'Not Provided') phone from sales.customers
+
+--- Using Case Expression
+select first_name,last_name,"phone"=
+CASE
+    WHEN sales.customers.phone is not null THEN sales.customers.phone
+    ELSE 'Not_Provided'
+END
+ from sales.customers
+
+
+ --- Another Beautiful Use COALESCE Expression
+
+ 
+CREATE TABLE salaries (
+    staff_id INT PRIMARY KEY,
+    hourly_rate decimal,
+    weekly_rate decimal,
+    monthly_rate decimal,
+    CHECK(
+        hourly_rate IS NOT NULL OR 
+        weekly_rate IS NOT NULL OR 
+        monthly_rate IS NOT NULL)
+);
+
+
+INSERT INTO 
+    salaries(
+        staff_id, 
+        hourly_rate, 
+        weekly_rate, 
+        monthly_rate
+    )
+VALUES
+    (1,20, NULL,NULL),
+    (2,30, NULL,NULL),
+    (3,NULL, 1000,NULL),
+    (4,NULL, NULL,6000),
+    (5,NULL, NULL,6500);
+
+
+
+SELECT
+    staff_id, 
+    hourly_rate, 
+    weekly_rate, 
+    monthly_rate
+FROM
+    salaries
+ORDER BY
+    staff_id;
+
+
+SELECT
+    staff_id, 
+	COALESCE(hourly_rate*24*30,weekly_rate*7,monthly_rate) Wages
+FROM
+    salaries
+ORDER BY
+    staff_id;
+
+
+
+--- Same Implemntation Using case Expression
+
+SELECT
+    staff_id, 
+	'Wages'=
+	CASE
+	    WHEN hourly_rate is not null THEN hourly_rate*24*30
+		WHEN weekly_rate is not null THEN weekly_rate*7
+    ELSE monthly_rate
+	END
+FROM
+    salaries
+ORDER BY
+    staff_id;
